@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hauteurs du Terminal</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            text-align: center;
+            color: #0056b3;
+        }
+        label {
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        input[type="text"] {
+            width: 42%; /* Decreased width for better fit */
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .required {
+            background-color: #d9eaff;
+            border: 1px solid #82b3ff;
+        }
+        .measured {
+            background-color: #e6f5d0;
+            border: 1px solid #b8e994;
+        }
+        .btn {
+            background-color: #0056b3;
+            color: white;
+            padding: 12px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background-color: #004499;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f7f9fc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Hauteurs du Terminal</h1>
+        <form id="adjustment-form">
+            <div class="row">
+                <label for="required-copper">Hauteur Cuivre (Demandée)</label>
+                <label for="required-insulation">Hauteur Isolant (Demandée)</label>
+            </div>
+            <div class="row">
+                <input type="text" class="required" id="required-copper" required>
+                <input type="text" class="required" id="required-insulation" required>
+            </div>
+
+            <div class="row">
+                <label for="measured-copper">Hauteur Cuivre (Mesurée)</label>
+                <label for="measured-insulation">Hauteur Isolant (Mesurée)</label>
+            </div>
+            <div class="row">
+                <input type="text" class="measured" id="measured-copper" required>
+                <input type="text" class="measured" id="measured-insulation" required>
+            </div>
+
+            <button type="button" class="btn" onclick="calculateAdjustments()">Calculer</button>
+        </form>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <footer>
+        &copy; <span id="year"></span> Amine Ben Nasr. Tous droits réservés.
+    </footer>
+
+    <script>
+        // Function to format the input and allow users to delete the decimal point
+        function formatInput(inputField) {
+            inputField.addEventListener('input', function () {
+                let value = inputField.value.replace(/[^0-9.]/g, ''); // Allow only digits and one decimal point
+
+                // If the user removes the decimal, don't force it
+                if (value.length > 1 && !value.includes('.')) {
+                    // Insert a decimal after the first digit only if it's not already present
+                    value = value.slice(0, 1) + '.' + value.slice(1);
+                }
+
+                inputField.value = value;
+            });
+        }
+
+        // Apply formatting to each input field
+        const copperRequiredField = document.getElementById('required-copper');
+        const insulationRequiredField = document.getElementById('required-insulation');
+        const copperMeasuredField = document.getElementById('measured-copper');
+        const insulationMeasuredField = document.getElementById('measured-insulation');
+
+        formatInput(copperRequiredField);
+        formatInput(insulationRequiredField);
+        formatInput(copperMeasuredField);
+        formatInput(insulationMeasuredField);
+
+        // Function to calculate adjustments
+        function calculateAdjustments() {
+            const requiredInsulation = parseFloat(document.getElementById('required-insulation').value);
+            const measuredInsulation = parseFloat(document.getElementById('measured-insulation').value);
+            const requiredCopper = parseFloat(document.getElementById('required-copper').value);
+            const measuredCopper = parseFloat(document.getElementById('measured-copper').value);
+
+            if (isNaN(requiredCopper) || isNaN(measuredCopper) || isNaN(requiredInsulation) || isNaN(measuredInsulation)) {
+                document.getElementById('result').innerHTML = "<p style='color: red;'>Veuillez remplir tous les champs correctement.</p>";
+                return;
+            }
+
+            const insulationDifference = Math.abs(measuredInsulation - requiredInsulation) < 0.01 ? 0 : (measuredInsulation - requiredInsulation);
+            const copperDifference = Math.abs(measuredCopper - requiredCopper) < 0.01 ? 0 : (measuredCopper - requiredCopper);
+
+            const insulationClicks = Math.round(insulationDifference / 0.02);
+            const copperClicks = Math.round(copperDifference / 0.02);
+
+            let insulationDirection = insulationClicks > 0 ? "Gauche (Fermer)" : (insulationClicks < 0 ? "Droite (Ouvrir)" : "");
+            let copperDirection = copperClicks > 0 ? "Gauche (Fermer)" : (copperClicks < 0 ? "Droite (Ouvrir)" : "");
+
+            const resultText = `
+                <h3>Résultat</h3>
+                <p>Cuivre : ${Math.abs(copperClicks)} clics${copperClicks !== 0 ? ` à ${copperDirection}` : ""}</p>
+                <p>Isolant : ${Math.abs(insulationClicks)} clics${insulationClicks !== 0 ? ` à ${insulationDirection}` : ""}</p>
+            `;
+
+            document.getElementById('result').innerHTML = resultText;
+        }
+
+        // Function to automatically update the year in the footer
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+
+</body>
+</html>
